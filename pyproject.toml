@@ -1,9 +1,61 @@
 [project]
 name = "dishka-dependencyinjection"
 version = "0.1.0"
-description = "Add your description here"
+description = "Comprehensive examples of Dishka dependency injection framework"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "dishka>=1.6.0",
+    "fastapi>=0.116.1",
+    "pydantic>=2.11.7",
+    "uvicorn>=0.30.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "poethepoet>=0.24.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[tool.poe.tasks]
+# Basic Examples
+simple-start = "python examples/01-basic-concepts/simple_start.py"
+basic-di = "python examples/01-basic-concepts/basic_dependency_injection.py"
+
+# Intermediate Examples  
+aliases = "python examples/02-intermediate/provider_aliases.py"
+provide-all = "python examples/02-intermediate/provide_all_pattern.py"
+
+# FastAPI Examples
+fastapi = "python examples/03-fastapi-integration/fastapi_basic_example.py"
+
+# Development tasks
+format = "black examples/"
+lint = "flake8 examples/"
+type-check = "mypy examples/"
+
+[tool.poe.tasks.help]
+help = "Show available tasks"
+shell = """
+cat << 'EOF'
+Available tasks:
+
+  Basic Examples:
+    simple-start  - Run the simple start example
+    basic-di      - Run basic dependency injection example
+
+  Intermediate Examples:
+    aliases       - Run provider aliases example
+    provide-all   - Run provide-all pattern example
+
+  FastAPI Examples:
+    fastapi       - Run FastAPI integration example
+
+  Development:
+    format        - Format code with black
+    lint          - Lint code with flake8
+    type-check    - Type check with mypy
+EOF
+"""
