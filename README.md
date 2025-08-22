@@ -66,7 +66,7 @@ uv run poe lint            # Lint code with flake8
 uv run poe type-check      # Type check with mypy
 ```
 
-## Core Concepts
+## Few Concepts
 
 ## Provider
 
@@ -86,6 +86,27 @@ The Container manages the lifecycle of dependencies. It resolves and provides in
 ## @provide
 
 The @provide decorator marks a method in a provider as a factory for creating a specific dependency. The method's return type indicates what dependency it provides.
+
+### Simplified provide syntax
+
+For simple cases where you just need to create an object using its constructor (without custom logic), you can use the simplified `provide` syntax instead of creating a method:
+
+```python
+# Instead of this:
+@provide
+def provide_database(self) -> Database:
+    return Database()
+
+@provide  
+def provide_user_service(self, database: Database) -> UserService:
+    return UserService(database)
+
+# You can write this:
+provide_database = provide(Database)
+provide_user_service = provide(UserService)
+```
+
+Dishka will automatically resolve constructor dependencies and call the appropriate constructors.
 
 ## @inject
 

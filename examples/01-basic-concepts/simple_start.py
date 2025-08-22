@@ -9,9 +9,8 @@ class Greeter:
 class MyProvider(Provider):
     scope = Scope.APP
 
-    @provide
-    def provide_greeter(self) -> Greeter:
-        return Greeter()
+    # Simple case: no dependencies, just create the object
+    provide_greeter = provide(Greeter)
 
 
 container = make_container(MyProvider())

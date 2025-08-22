@@ -69,31 +69,14 @@ class MyProvider(Provider):
 
     scope = Scope.APP
 
-    @provide
-    def provide_database(self) -> Database:
-        """
-        Recipe for Database: Just create a new Database()
-        This is the simplest case - no dependencies needed
-        """
-        return Database()
+    # Simple case: no dependencies, just create the object
+    provide_database = provide(Database)
 
-    @provide
-    def provide_user_service(self, database: Database) -> UserService:
-        """
-        Recipe for UserService:
-        1. First, get me a Database (Dishka will call provide_database)
-        2. Then create UserService and give it the database
-        """
-        return UserService(database)
+    # Dishka automatically resolves dependencies from constructor parameters
+    provide_user_service = provide(UserService)
 
-    @provide
-    def provide_greeter(self, user_service: UserService) -> Greeter:
-        """
-        Recipe for Greeter:
-        1. First, get me a UserService (Dishka will call provide_user_service)
-        2. Then create Greeter and give it the user_service
-        """
-        return Greeter(user_service)
+    # Dishka automatically resolves dependencies from constructor parameters
+    provide_greeter = provide(Greeter)
 
 
 # === STEP 3: THE MAGIC HAPPENS ===

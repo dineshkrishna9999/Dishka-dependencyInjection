@@ -3,13 +3,12 @@ Simple Dishka + FastAPI Example
 
 """
 
-import asyncio
-from typing import Annotated
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from dishka import make_async_container, Provider, provide, Scope, from_context
 from dishka.integrations.fastapi import setup_dishka, inject, FromDishka
 from pydantic import BaseModel
 import uvicorn
+
 
 # Step 1: Create your configuration
 # This is just a regular Pydantic model - nothing special about it
@@ -17,31 +16,31 @@ class AppSettings(BaseModel):
     app_name: str = "My Dishka App"
     debug: bool = True
 
+
 # Step 2: Create a service that needs the configuration
 # Notice: this service NEEDS AppSettings to work
 # Instead of creating AppSettings manually, Dishka will provide it automatically!
 class GreetingService:
     def __init__(self, settings: AppSettings):
         self.settings = settings
-    
+
     def greet(self, name: str) -> str:
         return f"Hello {name} from {self.settings.app_name}!"
+
 
 # Step 3: Tell Dishka how to create your objects
 # This is called a "Provider" - it's like a recipe book for Dishka
 class AppProvider(Provider):
     scope = Scope.APP  # APP scope = create once and reuse (singleton)
-    
+
     # Tell Dishka: "AppSettings will come from outside the container"
     # We'll pass it when creating the container
     settings = from_context(provides=AppSettings, scope=Scope.APP)
-    
-    # Tell Dishka: "To create GreetingService, call this method"
-    # Dishka will automatically pass the AppSettings parameter
-    @provide 
-    def get_greeting_service(self, settings: AppSettings) -> GreetingService:
-        print(f"Dishka is creating GreetingService with app_name: {settings.app_name}")
-        return GreetingService(settings)
+
+    # Tell Dishka: "To create GreetingService, just use its constructor"
+    # Dishka will automatically resolve the AppSettings dependency
+    greeting_service = provide(GreetingService)
+
 
 # Step 4: Setup FastAPI and Dishka
 
@@ -55,8 +54,8 @@ settings = AppSettings()
 # 1. The provider (recipe book)
 # 2. The context (external objects like settings)
 container = make_async_container(
-    AppProvider(),                    # Our recipe book
-    context={AppSettings: settings}  # Give settings from outside
+    AppProvider(),  # Our recipe book
+    context={AppSettings: settings},  # Give settings from outside
 )
 
 # Connect Dishka to FastAPI
@@ -65,26 +64,31 @@ setup_dishka(container, app)
 
 # Step 5: Use dependency injection in your FastAPI routes
 
+
 @app.get("/")
 async def root():
     """Regular route - no dependency injection needed"""
     return {"message": "Hello World! Try /greet/YourName or /settings"}
 
+
 @app.get("/greet/{name}")
 @inject  # This decorator enables Dishka dependency injection
 async def greet_user(
     name: str,  # Regular FastAPI parameter from URL
-    greeting_service: FromDishka[GreetingService]  # Dishka will provide this automatically!
+    greeting_service: FromDishka[
+        GreetingService
+    ],  # Dishka will provide this automatically!
 ):
     """
-    Magic happens here! 
+    Magic happens here!
     - Dishka sees you need GreetingService
-    - Dishka creates AppSettings from context  
+    - Dishka creates AppSettings from context
     - Dishka creates GreetingService using AppSettings
     - Dishka gives you the ready-to-use GreetingService
     - You just use it! No manual object creation!
     """
     return {"greeting": greeting_service.greet(name)}
+
 
 @app.get("/settings")
 @inject  # Enable dependency injection
@@ -94,6 +98,7 @@ async def get_settings(settings: FromDishka[AppSettings]):
     Dishka will get it from the context we provided earlier.
     """
     return {"app_name": settings.app_name, "debug": settings.debug}
+
 
 # Step 6: Run the application
 if __name__ == "__main__":
@@ -105,9 +110,9 @@ if __name__ == "__main__":
     print()
     print("Try these URLs:")
     print("   http://localhost:8000/")
-    print("   http://localhost:8000/greet/Dinesh") 
+    print("   http://localhost:8000/greet/Dinesh")
     print("   http://localhost:8000/settings")
     print("   http://localhost:8000/docs (FastAPI auto-generated docs)")
     print()
-    
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
